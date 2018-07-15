@@ -1,0 +1,193 @@
+/* test data for normal distribution*/
+PROC UNIVARIATE DATA = Cfn NORMAL;
+VAR variable1;
+HISTOGRAM;
+RUN;
+
+/*determine median, IQR and n*/
+PROC MEANS DATA = Cfn 
+	Median QRANGE N MAXDEC=2;
+RUN;
+
+/*correlations - Pearson-normal distribution; Spearman-non-normal distribution*/
+PROC CORR DATA = Cfn PEARSON SPEARMAN KENDALL FISHER(BIASADJ=no);
+VAR age;
+WITH variable1;
+TITLE "Correlation Coefficients";
+RUN;
+
+/*plot correlation data*/
+proc corr data=Cfn plots=matrix(histogram);
+run;
+
+/*log transform data*/
+DATA newCfn; 
+SET Cfn; 
+logvariable1 = log(variable1); 
+RUN;
+
+/*check log transformed data for normal distribution*/
+proc univariate data=newCfn;
+   var logvariable1;
+   qqplot;
+RUN;
+
+PROC UNIVARIATE DATA = NewCfn NORMAL;
+VAR logvariable1;
+HISTOGRAM;
+RUN;
+
+/*determine 95% confidence limits, p value and beta
+for log transformed data*/
+proc glm data = Newcfn;
+  class statin_user age_at_yr10 gender;
+  model logvariable1  = statin_user age_at_yr10 gender / solution CLPARM;
+run;
+
+/* for data that is not normal when log transform
+rank data values using proc rank
+then determine 95% confidence limits, p value and beta
+of ranks using proc glm*/
+PROC RANK
+	DATA = Cfn
+	OUT = newCfn
+	FRACTION
+	TIES = MEAN;
+RANKS rank_variable2;
+VAR variable2;
+RUN;
+
+proc glm data = Newcfn;
+  class statin_user age gender;
+  model rank_variable2  = statin_user age gender / solution CLPARM;
+  run;
+quit;
+
+/*determine p values and beta*/
+proc glmselect data=bw; 
+class statin_user gender; 
+model variable1 = statin_user gender / selection=none stb showpvalues; 
+run;
+
+/*proc means*/
+PROC MEANS DATA = Bw Mean STD MIN MAX N Median MAXDEC=2;
+RUN;
+
+/*independent t-test for normally distributed data (2 independent groups compared)*/
+proc ttest data=Cfn sides=2 alpha=0.05 h0=0;
+ 	title "Two sample t-test example";
+ 	class gender; 
+	var _numeric_;
+run;
+
+/* compare 3 or more groups of normally distributed data
+with one dependent variable and one independent variable*/
+proc glm data = Bw;
+  class statin_user;
+  model variable3  = statin_user / solution CLPARM;
+  run;
+quit;
+
+/* compare 3 or more groups of normally distributed data
+with one dependent variable and 2 or more independent variables*/
+proc glm data = Bw;
+  class statin_user age_at_yr10 gender;
+  model variable4  = statin_user age_at_yr10 gender / solution CLPARM;
+  run;
+quit;
+
+/*to compare 2 groups of non normally distributed data*/
+PROC NPAR1WAY data=datafile wilcoxon;
+Class sample;
+Var variable2;
+Run;
+
+/*log transform data 
+create propensity score from co-variates for propensity to be a statin user
+rank propensity score
+determine difference in variable1 between statin users when include in model
+ranked propensity score to be a statin user
+use logvariable1 in the proc glm (quote anti-log in papers)
+comparison is made within ranks*/
+
+DATA newCfn; 
+SET Cfn; 
+logvariable1 = log(variable1); 
+RUN;
+
+proc logistic DESC data=newCfn;
+class gender smoked hypertension;
+model statin_user = gender smoked hypertension BMI age_at_yr10;
+output out=psmodel pred=propscore;  
+run;
+
+proc rank groups=10 out=ps10;
+var propscore;
+ranks prop10; 			
+run;
+
+data ps10; set ps10;   
+run; 
+
+proc glm data = ps10;
+  class statin_user;
+  model logvariable1  = statin_user prop10 / solution CLPARM;
+  run;
+quit;
+
+/* propensity score ranking and comparison of variable2 between statin users and non
+when continuous variable2 and logvariable2 not normally distributed
+use non parametric test with strata statement to compare within ranks*/
+proc logistic DESC data=Cfn;
+class gender smoked hypertension diabetic;
+model statin_user = gender smoked hypertension diabetic BMI age;
+output out=psmodel pred=propscore;  
+run;
+
+proc rank groups=10 out=ps10;
+var propscore;
+ranks prop10; 			
+run;
+
+data ps10; set ps10;   
+run; 
+
+PROC NPAR1WAY data=Ps10 wilcoxon;
+Class statin_user;
+Var variable2;
+STRATA prop10;
+Run;
+
+/*categorical data analysis for statistical difference
+between statin users and non with ranked propensity score included as an independent variable
+proc genmod data = ps10;
+  class statin_user;
+  model variable6  = statin_user prop10;
+  run;
+quit;
+
+DATA newCfn; 
+SET Cfn; 
+logHoma = log(HOMA); 
+RUN;
+
+/* generating a weighted propensity score and then use in proc glm
+proc logistic DESC data=newCfn;
+class gender smoked hypertension;
+model statin_user = gender smoked hypertension BMI age_at_yr10;
+output out=psmodel pred=propscore;  
+run;
+
+Data psdataset;
+Set psmodel;
+If statin_user=1 then ps_weight=1/propscore;
+Else ps_weight=1/(1-propscore);
+Run;
+
+Proc glm data=psdataset;
+Class statin_user;
+Model logvariable1 = statin_user ps_weight / solution;
+Weight ps_weight;
+Quit;
+
+
