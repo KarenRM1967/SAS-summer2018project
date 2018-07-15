@@ -168,7 +168,7 @@ quit;
 
 DATA newCfn; 
 SET Cfn; 
-logHoma = log(HOMA); 
+logvariable1 = log(variable1); 
 RUN;
 
 /* generating a weighted propensity score and then use in proc glm
