@@ -190,4 +190,27 @@ Model logvariable1 = statin_user ps_weight / solution;
 Weight ps_weight;
 Quit;
 
+/*HBox plots of median, mean, IQR, min, max, outliers*/
+PROC MEANS DATA = Cfn 
+	Median QRANGE N MAXDEC=2;
+RUN;
 
+proc sgplot data=Cfn;
+  title "Age Distribution by Gender at Baseline";
+  hbox age / category=gender;
+run;
+
+proc sgplot data=Cfn;
+  title "Age Distribution Overall at Baseline";
+  hbox age;
+run;
+
+proc sgplot data=Cfn;
+  title "BMI Distribution by Gender at Baseline";
+  hbox BMI / category=gender;
+run;
+
+proc sgplot data=Cfn;
+  title "BMI Distribution Overall at Baseline";
+  hbox BMI;
+run;
