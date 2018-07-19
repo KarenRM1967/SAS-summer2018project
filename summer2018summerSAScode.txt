@@ -214,3 +214,26 @@ proc sgplot data=Cfn;
   title "BMI Distribution Overall at Baseline";
   hbox BMI;
 run;
+
+/*proc genmod approach - without desc models probability that statin user = 'n'*/
+proc genmod data = Cfn;
+
+  class gender;
+
+  model statin_user  = gender / link=logit dist=binomial;
+
+  run;
+
+quit;
+
+/*include desc to model the probability that statin user = 'y'
+proc genmod data = Cfn DESC;
+  class gender;
+  model statin_user  = gender / link=logit dist=binomial;
+  run;
+quit;
+
+/*proc freq approach*/
+proc freq data= Cfn; 
+              tables gender*statin_user / chisq; 
+run;
