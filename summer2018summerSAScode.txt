@@ -186,7 +186,7 @@ Run;
 
 Proc glm data=psdataset;
 Class statin_user;
-Model logvariable1 = statin_user ps_weight / solution;
+Model logvariable1 = statin_user / solution;
 Weight ps_weight;
 Quit;
 
@@ -237,3 +237,10 @@ quit;
 proc freq data= Cfn; 
               tables gender*statin_user / chisq; 
 run;
+
+/*when 3 statin types*/
+proc genmod data = Cfn DESC;
+  class statin_type;
+  model gender  = statin_type / link=logit dist=binomial;
+  run;
+quit;
