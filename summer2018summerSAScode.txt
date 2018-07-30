@@ -126,8 +126,7 @@ var propscore;
 ranks prop10; 			
 run;
 
-data ps10; set ps10;   
-run; 
+
 
 proc glm data = ps10;
   class statin_user;
