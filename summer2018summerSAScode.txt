@@ -149,8 +149,7 @@ var propscore;
 ranks prop10; 			
 run;
 
-data ps10; set ps10;   
-run; 
+
 
 PROC NPAR1WAY data=Ps10 wilcoxon;
 Class statin_user;
