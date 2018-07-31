@@ -242,3 +242,32 @@ proc genmod data = Cfn DESC;
   model gender  = statin_type / link=logit dist=binomial;
   run;
 quit;
+
+/*create propensity score - 5 strata - determine median and IQR in each strata - stats for difference with propensity*/
+DATA newCfn; 
+SET Cfn; 
+logHoma = log(HOMA); 
+RUN;
+
+proc logistic DESC data=newCfn;
+class gender smoked hypertension kidney_stones;
+model statin_user = gender smoked hypertension BMI age_at_yr10 kidney_stones;
+output out=psmodel pred=propscore;  
+run;
+
+proc rank groups=5 out=ps5;
+var propscore;
+ranks prop5; 			
+run;
+
+proc glm data = ps5;
+  class statin_user;
+  model logHOMA  = statin_user prop5 / solution CLPARM;
+  run;
+quit;
+
+PROC MEANS DATA = Ps5 
+	Median QRANGE N MAXDEC=2;
+	CLASS prop5 statin_user;
+VAR HOMA;
+RUN;
