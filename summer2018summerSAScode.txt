@@ -271,3 +271,22 @@ PROC MEANS DATA = Ps5
 	CLASS prop5 statin_user;
 VAR HOMA;
 RUN;
+
+/*to determine median within quintiles*/
+proc rank data=test out=out1 groups=5;                               
+     var AAC;                                                          
+     ranks rank1;                                                      
+  run;   
+
+/*all variables*/
+PROC MEANS DATA = Cfn 
+	Median QRANGE N MAXDEC=2;
+CLASS statin_use rank1;
+RUN;
+
+/*just variable F_AAC24_yr10*/
+PROC MEANS DATA = out1 
+	Median QRANGE N MAXDEC=2;
+CLASS statin_user rank1;
+VAR F_AAC24_yr10;
+RUN;
