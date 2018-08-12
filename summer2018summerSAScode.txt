@@ -290,3 +290,9 @@ PROC MEANS DATA = out1
 CLASS statin_user rank1;
 VAR F_AAC24_yr10;
 RUN;
+
+/*to assign a tertile to a variable value*/
+proc rank groups=3 out=ps1;
+var phosphate;
+ranks prop3; 			
+run;
